@@ -11,26 +11,19 @@ MEDICAL_KEYWORDS = [
 ]
 
 # 招标类型关键词
-TENDER_TYPE_KEYWORDS = ["采购", "招标", "中标", "成交", "投标", "供应商", "公告", "竞争", "单一来源"]
-
-# 招标网站配置 - 直接指向采购公告页面
 TENDER_SITES = [
-    {
-        "id": "jl-cggg",
-        "name": "吉林省政府采购-采购公告",
-        "base_url": "https://www.jl.gov.cn",
-        "list_url": "https://www.jl.gov.cn/ggzy/zfcg/cggg/",
-        "category": "采购公告",
-    },
-    {
-        "id": "jl-zbgg",
-        "name": "吉林省政府采购-中标公告",
-        "base_url": "https://www.jl.gov.cn",
-        "list_url": "https://www.jl.gov.cn/ggzy/zfcg/zbgg/",
-        "category": "中标公告",
-    },
+    {"id": "ggzyzx", "name": "吉林省公共资源交易中心", "base_url": "http://www.ggzyzx.jl.gov.cn", "list_url": "http://www.ggzyzx.jl.gov.cn/jyxx/zfcg/zbgg/", "category": "省级-中标公告"},
+    {"id": "ccgp-jilin", "name": "吉林省政府采购网", "base_url": "http://www.ccgp-jilin.gov.cn", "list_url": "http://www.ccgp-jilin.gov.cn/site/category?parentId=550068&childrenCode=ZcyAnnouncement", "category": "政府采购"},
+    {"id": "zcy", "name": "政采云平台", "base_url": "https://www.zcygov.cn", "list_url": "https://www.zcygov.cn/", "category": "政采云"},
+    {"id": "ccggzy", "name": "长春市公共资源交易中心", "base_url": "http://www.ccggzy.com.cn", "list_url": "http://www.ccggzy.com.cn/", "category": "长春市"},
+    {"id": "jlsggzy", "name": "吉林市公共资源交易中心", "base_url": "http://www.jlsggzyjy.gov.cn", "list_url": "http://www.jlsggzyjy.gov.cn/", "category": "吉林市"},
+    {"id": "spggzy", "name": "四平市公共资源交易中心", "base_url": "http://ggzy.siping.gov.cn", "list_url": "http://ggzy.siping.gov.cn/", "category": "四平市"},
+    {"id": "ybzggzy", "name": "延边州公共资源交易中心", "base_url": "http://ggzy.yanbian.gov.cn", "list_url": "http://ggzy.yanbian.gov.cn/", "category": "延边州"},
+    {"id": "thggzy", "name": "通化市公共资源交易中心", "base_url": "http://ggzy.tonghua.gov.cn", "list_url": "http://ggzy.tonghua.gov.cn/", "category": "通化市"},
+    {"id": "syggzy", "name": "松原市公共资源交易中心", "base_url": "http://ggzy.songyuan.gov.cn", "list_url": "http://ggzy.songyuan.gov.cn/", "category": "松原市"},
+    {"id": "bcggzy", "name": "白城市公共资源交易中心", "base_url": "http://ggzy.baicheng.gov.cn", "list_url": "http://ggzy.baicheng.gov.cn/", "category": "白城市"},
+    {"id": "bsggzy", "name": "白山市公共资源交易中心", "base_url": "http://ggzy.baishan.gov.cn", "list_url": "http://ggzy.baishan.gov.cn/", "category": "白山市"},
 ]
-
 EMAIL_CONFIG = {
     "enabled": True,
     "smtp_server": "smtp.qq.com",
