@@ -1,0 +1,61 @@
+name: 医疗招标信息监控爬虫
+
+on:
+  schedule:
+    # 每小时运行一次 (UTC时间)
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    # 手动触发
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Configure environment
+        run: |
+          # 创建环境配置
+          echo "LOCAL_MODE=false" > .env
+
+      - name: Run spider
+        env:
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
+        run: |
+          # 动态配置邮件（覆盖config.py中的设置）
+          python -c "
+import config
+import os
+config.LOCAL_MODE = False
+config.EMAIL_CONFIG['smtp_server'] = os.environ.get('SMTP_SERVER', config.EMAIL_CONFIG['smtp_server'])
+config.EMAIL_CONFIG['smtp_port'] = int(os.environ.get('SMTP_PORT', config.EMAIL_CONFIG['smtp_port']))
+config.EMAIL_CONFIG['sender_email'] = os.environ.get('SMTP_USER', config.EMAIL_CONFIG['sender_email'])
+config.EMAIL_CONFIG['sender_password'] = os.environ.get('SMTP_PASSWORD', config.EMAIL_CONFIG['sender_password'])
+config.EMAIL_CONFIG['receiver_email'] = os.environ.get('RECEIVER_EMAIL', config.EMAIL_CONFIG['receiver_email'])
+"
+          python main.py
+        shell: bash
+
+      - name: Commit sent URLs
+        if: github.event_name == 'schedule'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add sent_urls.txt
+          git diff --staged --quiet || git commit -m "Update sent URLs: $(date -u +'%Y-%m-%d %H:%M')"
+          git push
