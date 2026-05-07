@@ -8,7 +8,6 @@ from email.mime.text import MIMEText
 
 SENT_FILE = "sent_urls.txt"
 
-# 邮件配置 - 从环境变量读取
 EMAIL_USER = os.environ.get('EMAIL_USER', '1192368708@qq.com')
 EMAIL_PASS = os.environ.get('EMAIL_PASS', 'lyvcpezdrgeriegj')
 
@@ -23,7 +22,7 @@ KW = ["医疗", "设备", "仪器", "器械", "耗材", "试剂"]
 
 def load_sent():
     if os.path.exists(SENT_FILE):
-        with open(SENT_FILE, "r", encoding="utf-8") as f: 
+        with open(SENT_FILE, "r", encoding="utf-8") as f:
             return set(l.strip() for l in f if l.strip())
     return set()
 
@@ -92,16 +91,16 @@ all_r = {}
 
 with sync_playwright() as p:
     b = p.chromium.launch(headless=True)
-    
+
     for name, url in sites:
         print(f"\n[->] {name}")
         items = []
-        
-            page = b.new_page()
+
+        page = b.new_page()
         try:
             page.goto(url, timeout=15000)
             page.wait_for_timeout(2000)
-        except Exception as e:
+        except:
             print(f"  Timeout, retrying...")
             try:
                 page.goto(url, timeout=15000)
@@ -110,13 +109,22 @@ with sync_playwright() as p:
                 print(f"  Failed to load: {url}")
                 page.close()
                 continue
-            
+
+        html = page.content()
+        soup = BeautifulSoup(html, "html.parser")
+        links = soup.find_all("a", href=True)
+        print(f"  Links: {len(links)}")
+
+        for a in links:
+            title = a.get_text(strip=True)
+            href = a.get("href", "")
+
             if len(title) < 8 or not href or href in ["#",""]: continue
             if href in ["javascript:;","javascript:void(0)"]: continue
-            
+
             link_url = urljoin(url, href)
             if not link_url.startswith("http"): continue
-            
+
             for k in KW:
                 if k in title:
                     items.append({
@@ -133,15 +141,14 @@ with sync_playwright() as p:
                     })
                     print(f"  + {title[:40]}")
                     break
-                    break
-        
+
         page.close()
-        
+
         for i in items:
             if i['url'] not in sent: save_sent(i['url'])
         all_r[name] = items
         print(f"  => {len(items)}")
-    
+
     b.close()
 
 total = sum(len(v) for v in all_r.values())
@@ -157,12 +164,12 @@ if total > 0:
     print("[Email] Sending new data...")
     try:
         msg = MIMEMultipart()
-        msg['From'] = "1192368708@qq.com"
-        msg['To'] = "1192368708@qq.com"
+        msg['From'] = EMAIL_USER
+        msg['To'] = EMAIL_USER
         msg['Subject'] = f"吉林省医疗设备招标 - {total}条"
-        
+
         body = f"发现{total}条医疗采购信息:\n\n"
-        
+
         for name, items in all_r.items():
             if not items: continue
             body += f"【{name}】- {len(items)}条\n"
@@ -170,12 +177,11 @@ if total > 0:
             for i in items:
                 body += f"标题: {i['title'][:60]}\n"
                 body += f"  来源: {i['source_type']} | 类型: {i['info_type']} | 分类: {i['category']}\n"
-                body += f"  品牌: {i['brand']} | 型号: {i['model']} | 供应商: {i['supplier']}\n"
-                body += f"  注册证: {i['reg_num']} | 日期: {i['publish_date']} | 地区: {i['region']}\n"
+                body += f"  品牌: {i['brand']} | 日期: {i['publish_date']} | 地区: {i['region']}\n"
                 body += f"  链接: {i['url']}\n\n"
-        
+
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
-        
+
         server = smtplib.SMTP_SSL('smtp.qq.com', 465)
         server.login(EMAIL_USER, EMAIL_PASS)
         server.send_message(msg)
