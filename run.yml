@@ -1,13 +1,13 @@
 name: 医疗招标信息监控爬虫
 
 on:
-  schedule:
-    - cron: '0 0 * * *'
+schedule:
+  - cron: '0 8,10,12,14,16,18 * * *'
   workflow_dispatch:
 
 jobs:
   crawl:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
@@ -24,21 +24,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install Playwright browsers
-        run: python -m playwright install chromium
-
-      - name: Run spider
-        env:
-          EMAIL_USER: ${{ secrets.EMAIL_USER }}
-          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
-        run: python main_final.py
-
-      - name: Upload sent URLs for persistence
-        uses: actions/upload-artifact@v4
-        with:
-          name: sent-urls
-          path: sent_urls.txt
-          retention-days: 1
+      - name: Install Playwright
+        run: python -m playwright install --with-deps chromium
 
       - name: Download previous sent URLs
         uses: actions/download-artifact@v4
@@ -46,3 +33,16 @@ jobs:
           name: sent-urls
           path: .
         continue-on-error: true
+
+      - name: Run spider
+        env:
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+        run: python main_final.py
+
+      - name: Upload sent URLs
+        uses: actions/upload-artifact@v4
+        with:
+          name: sent-urls
+          path: sent_urls.txt
+          retention-days: 2
