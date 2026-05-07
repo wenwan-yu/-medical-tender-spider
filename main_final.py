@@ -128,7 +128,8 @@ with sync_playwright() as p:
 
             has_medical = any(k in title for k in KW_MEDICAL)
             has_equipment = any(k in title for k in KW_EQUIPMENT)
-            if has_medical and has_equipment:
+            
+            if has_medical or ("医院" in title and has_equipment):
                 items.append({
                     "url": link_url, "title": title,
                     "source_type": get_stype(name),
@@ -141,8 +142,9 @@ with sync_playwright() as p:
                     "publish_date": get_dt(link_url),
                     "region": get_reg(title)
                 })
-                print(f"  + {title[:40]}")
-                break
+                print(f"  + {title[:50]}")
+            elif len(title) > 10:
+                print(f"  - {title[:50]}")
 
         page.close()
 
