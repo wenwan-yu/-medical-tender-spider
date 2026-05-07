@@ -12,7 +12,10 @@ EMAIL_USER = os.environ.get('EMAIL_USER', '1192368708@qq.com')
 EMAIL_PASS = os.environ.get('EMAIL_PASS', 'lyvcpezdrgeriegj')
 
 sites = [
+    ("吉林省人民政府公共资源专栏", "https://www.jl.gov.cn/ggzy/zbcg/zbgg/index.html"),
+    ("中国采购与招标网", "https://www.chinabidding.cn/tg/sem/gg/index.html"),
     ("军队采购网", "https://www.plap.mil.cn/"),
+    ("吉林省政府采购网", "http://www.ccgp-jilin.gov.cn/site/category?parentId=550068&childrenCode=ZcyAnnouncement"),
 ]
 
 KW_MEDICAL = ["医疗", "医院", "医药"]
