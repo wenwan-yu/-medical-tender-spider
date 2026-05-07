@@ -12,14 +12,12 @@ EMAIL_USER = os.environ.get('EMAIL_USER', '1192368708@qq.com')
 EMAIL_PASS = os.environ.get('EMAIL_PASS', 'lyvcpezdrgeriegj')
 
 sites = [
-    ("吉林省人民政府公共资源专栏", "https://www.jl.gov.cn/ggzy/zbcg/zbgg/index.html"),
-    ("中国采购与招标网", "https://www.chinabidding.cn/tg/sem/gg/index.html"),
-    ("军队采购网", "https://www.plap.mil.cn/index/noticeMore.html"),
-    ("吉林省政府采购网", "http://www.ccgp-jilin.gov.cn/site/category?parentId=550068&childrenCode=ZcyAnnouncement"),
+    ("军队采购网", "https://www.plap.mil.cn/index/noticeMore.html?category=3001"),
+    ("军采网-医疗设备", "https://www.plap.mil.cn/index/noticeMore.html?category=3004"),
 ]
 
-KW_MEDICAL = ["医疗", "医院", "卫生院", "诊所", "医药"]
-KW_EQUIPMENT = ["设备", "仪器", "器械", "耗材", "试剂", "采购"]
+KW_MEDICAL = ["医疗", "医院", "医药"]
+KW_EQUIPMENT = ["采购", "招标", "中标", "成交", "设备", "器械"]
 
 def load_sent():
     if os.path.exists(SENT_FILE):
@@ -31,44 +29,28 @@ def save_sent(url):
     with open(SENT_FILE, "a", encoding="utf-8") as f: f.write(url+"\n")
 
 def get_stype(n):
-    if "吉林省" in n and "政府" in n: return "省级采购"
-    if "采购与招标" in n: return "招标门户"
     if "军队" in n: return "军队采购"
     return "其他"
 
 def get_itype(t):
-    for k,v in [('招标','招标'),('投标','投标')]:
+    for k,v in [('招标','招标'),('中标','中标'),('成交','成交'),('采购','采购')]:
         if k in t: return v
     return "公告"
 
 def get_cat(t):
     for ks,c in [
-        (['CT','核磁','MRI','X光','DR','B超','彩超','超声'],'设备类-大型影像'),
-        (['心电','监护','脑电','血氧','血压'],'设备类-生命体征'),
-        (['内窥镜','胃镜','肠镜','腹腔镜','胸腔镜'],'设备类-内窥镜'),
-        (['生化','血球','血凝','免疫','PCR','核酸','检验'],'设备类-检验设备'),
-        (['呼吸机','麻醉机','透析机','监护仪'],'设备类-治疗设备'),
-        (['手术','无影灯','手术床','手术台'],'设备类-手术设备'),
-        (['康复','理疗','按摩'],'设备类-康复设备'),
-        (['耗材','试剂','敷料','针','管'],'耗材类'),
-        (['口罩','防护','手套','隔离'],'耗材类-防护'),
+        (['CT','核磁','MRI','X光','DR'],'设备类-大型影像'),
+        (['检验','生化','血球','免疫'],'设备类-检验设备'),
+        (['手术','监护','呼吸','麻醉'],'设备类-治疗设备'),
+        (['耗材','试剂','敷料'],'耗材类'),
     ]:
         if any(k in t for k in ks): return c
     return "其他"
 
-def get_brand(t):
-    for b in ['GE','西门子','飞利浦','Siemens','Philips','GE医疗','佳能','Sony','奥林巴斯','Pentax','富士','Fujifilm']:
-        if b in t: return b
-    return "-"
-
-def get_model(t):
-    return "-"
-
-def get_supplier(t):
-    return "-"
-
-def get_reg_num(t):
-    return "-"
+def get_brand(t): return "-"
+def get_model(t): return "-"
+def get_supplier(t): return "-"
+def get_reg_num(t): return "-"
 
 def get_dt(u):
     for p in [r'/(\d{8})/',r'/(\d{4})(\d{2})(\d{2})/']:
@@ -99,17 +81,12 @@ with sync_playwright() as p:
 
         page = b.new_page()
         try:
-            page.goto(url, timeout=15000)
-            page.wait_for_timeout(2000)
-        except:
-            print(f"  Timeout, retrying...")
-            try:
-                page.goto(url, timeout=15000)
-                page.wait_for_timeout(2000)
-            except:
-                print(f"  Failed to load: {url}")
-                page.close()
-                continue
+            page.goto(url, timeout=10000)
+            page.wait_for_timeout(1500)
+        except Exception as e:
+            print(f"  Failed: {str(e)[:50]}")
+            page.close()
+            continue
 
         html = page.content()
         soup = BeautifulSoup(html, "html.parser")
@@ -120,7 +97,8 @@ with sync_playwright() as p:
             title = a.get_text(strip=True)
             href = a.get("href", "")
 
-            if len(title) < 8 or not href or href in ["#",""]: continue
+            if len(title) < 5: continue
+            if not href or href in ["#",""]: continue
             if href in ["javascript:;","javascript:void(0)"]: continue
 
             link_url = urljoin(url, href)
@@ -129,7 +107,7 @@ with sync_playwright() as p:
             has_medical = any(k in title for k in KW_MEDICAL)
             has_equipment = any(k in title for k in KW_EQUIPMENT)
             
-            if has_medical and has_equipment:
+            if has_medical or ("医院" in title):
                 items.append({
                     "url": link_url, "title": title,
                     "source_type": get_stype(name),
@@ -142,9 +120,7 @@ with sync_playwright() as p:
                     "publish_date": get_dt(link_url),
                     "region": get_reg(title)
                 })
-                print(f"  + {title[:50]}")
-            elif len(title) > 10:
-                print(f"  - {title[:50]}")
+                print(f"  + {title[:60]}")
 
         page.close()
 
@@ -158,22 +134,18 @@ with sync_playwright() as p:
 total = sum(len(v) for v in all_r.values())
 print(f"\n[Total] {total}")
 
-jl = len(all_r.get('吉林省人民政府公共资源专栏',[]))
-cb = len(all_r.get('中国采购与招标网',[]))
-jun = len(all_r.get('军队采购网',[]))
-jl2 = len(all_r.get('吉林省政府采购网',[]))
-print(f"[Check] 吉林省:{jl} | 招标网:{cb} | 军队:{jun} | 政府采购网:{jl2}")
+for name, cnt in all_r.items():
+    print(f"  {name}: {cnt}")
 
-if total > 0:
-    print("[Email] Sending new data...")
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_USER
-        msg['To'] = EMAIL_USER
+print("[Email] Sending...")
+try:
+    msg = MIMEMultipart()
+    msg['From'] = EMAIL_USER
+    msg['To'] = EMAIL_USER
+    
+    if total > 0:
         msg['Subject'] = f"吉林省医疗设备招标 - {total}条"
-
         body = f"发现{total}条医疗采购信息:\n\n"
-
         for name, items in all_r.items():
             if not items: continue
             body += f"【{name}】- {len(items)}条\n"
@@ -181,17 +153,17 @@ if total > 0:
             for i in items:
                 body += f"标题: {i['title'][:60]}\n"
                 body += f"  来源: {i['source_type']} | 类型: {i['info_type']} | 分类: {i['category']}\n"
-                body += f"  品牌: {i['brand']} | 日期: {i['publish_date']} | 地区: {i['region']}\n"
                 body += f"  链接: {i['url']}\n\n"
+    else:
+        msg['Subject'] = "吉林省医疗设备招标 - 无匹配数据"
+        body = f"运行时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n本次爬取未发现匹配的医疗采购信息。\n\n可能原因:\n1. 网站近期无医疗设备招标\n2. 关键词需要调整\n3. 网站结构变化\n\n如需调整关键词，请联系管理员。"
 
-        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+    msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
-        server = smtplib.SMTP_SSL('smtp.qq.com', 465)
-        server.login(EMAIL_USER, EMAIL_PASS)
-        server.send_message(msg)
-        server.quit()
-        print("[Email] OK")
-    except Exception as e:
-        print(f"[Email] Failed: {e}")
-else:
-    print("[Email] No new data")
+    server = smtplib.SMTP_SSL('smtp.qq.com', 465)
+    server.login(EMAIL_USER, EMAIL_PASS)
+    server.send_message(msg)
+    server.quit()
+    print("[Email] OK")
+except Exception as e:
+    print(f"[Email] Failed: {e}")
