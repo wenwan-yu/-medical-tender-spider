@@ -12,8 +12,7 @@ EMAIL_USER = os.environ.get('EMAIL_USER', '1192368708@qq.com')
 EMAIL_PASS = os.environ.get('EMAIL_PASS', 'lyvcpezdrgeriegj')
 
 sites = [
-    ("军队采购网", "https://www.plap.mil.cn/index/noticeMore.html?category=3001"),
-    ("军采网-医疗设备", "https://www.plap.mil.cn/index/noticeMore.html?category=3004"),
+    ("军队采购网", "https://www.plap.mil.cn/"),
 ]
 
 KW_MEDICAL = ["医疗", "医院", "医药"]
@@ -81,14 +80,17 @@ with sync_playwright() as p:
 
         page = b.new_page()
         try:
-            page.goto(url, timeout=10000)
-            page.wait_for_timeout(1500)
+            page.goto(url, timeout=15000)
+            page.wait_for_timeout(3000)
         except Exception as e:
             print(f"  Failed: {str(e)[:50]}")
             page.close()
             continue
 
         html = page.content()
+        if "暂无" in html:
+            print("  [提示] 页面暂无数据")
+        
         soup = BeautifulSoup(html, "html.parser")
         links = soup.find_all("a", href=True)
         print(f"  Links: {len(links)}")
@@ -97,8 +99,7 @@ with sync_playwright() as p:
             title = a.get_text(strip=True)
             href = a.get("href", "")
 
-            if len(title) < 5: continue
-            if not href or href in ["#",""]: continue
+            if len(title) < 8 or not href or href in ["#",""]: continue
             if href in ["javascript:;","javascript:void(0)"]: continue
 
             link_url = urljoin(url, href)
@@ -107,7 +108,7 @@ with sync_playwright() as p:
             has_medical = any(k in title for k in KW_MEDICAL)
             has_equipment = any(k in title for k in KW_EQUIPMENT)
             
-            if has_medical or ("医院" in title):
+            if has_medical and has_equipment:
                 items.append({
                     "url": link_url, "title": title,
                     "source_type": get_stype(name),
@@ -120,14 +121,15 @@ with sync_playwright() as p:
                     "publish_date": get_dt(link_url),
                     "region": get_reg(title)
                 })
-                print(f"  + {title[:60]}")
+                print(f"  + {title[:50]}")
 
         page.close()
 
-        for i in items:
-            if i['url'] not in sent: save_sent(i['url'])
-        all_r[name] = items
-        print(f"  => {len(items)}")
+        new_items = [i for i in items if i['url'] not in sent]
+        for i in new_items:
+            save_sent(i['url'])
+        all_r[name] = new_items
+        print(f"  => {len(new_items)} 新条目")
 
     b.close()
 
