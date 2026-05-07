@@ -18,7 +18,8 @@ sites = [
     ("吉林省政府采购网", "http://www.ccgp-jilin.gov.cn/site/category?parentId=550068&childrenCode=ZcyAnnouncement"),
 ]
 
-KW = ["医疗", "设备", "仪器", "器械", "耗材", "试剂"]
+KW_MEDICAL = ["医疗"]
+KW_EQUIPMENT = ["设备", "仪器", "器械", "耗材", "试剂"]
 
 def load_sent():
     if os.path.exists(SENT_FILE):
@@ -125,22 +126,23 @@ with sync_playwright() as p:
             link_url = urljoin(url, href)
             if not link_url.startswith("http"): continue
 
-            for k in KW:
-                if k in title:
-                    items.append({
-                        "url": link_url, "title": title,
-                        "source_type": get_stype(name),
-                        "info_type": get_itype(title),
-                        "category": get_cat(title),
-                        "brand": get_brand(title),
-                        "model": get_model(title),
-                        "supplier": get_supplier(title),
-                        "reg_num": get_reg_num(title),
-                        "publish_date": get_dt(link_url),
-                        "region": get_reg(title)
-                    })
-                    print(f"  + {title[:40]}")
-                    break
+            has_medical = any(k in title for k in KW_MEDICAL)
+            has_equipment = any(k in title for k in KW_EQUIPMENT)
+            if has_medical and has_equipment:
+                items.append({
+                    "url": link_url, "title": title,
+                    "source_type": get_stype(name),
+                    "info_type": get_itype(title),
+                    "category": get_cat(title),
+                    "brand": get_brand(title),
+                    "model": get_model(title),
+                    "supplier": get_supplier(title),
+                    "reg_num": get_reg_num(title),
+                    "publish_date": get_dt(link_url),
+                    "region": get_reg(title)
+                })
+                print(f"  + {title[:40]}")
+                break
 
         page.close()
 
