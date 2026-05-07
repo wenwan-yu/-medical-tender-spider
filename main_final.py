@@ -97,18 +97,19 @@ with sync_playwright() as p:
         print(f"\n[->] {name}")
         items = []
         
-        page = b.new_page()
-        page.goto(url, timeout=30000)
-        page.wait_for_timeout(3000)
-        
-        html = page.content()
-        soup = BeautifulSoup(html, "html.parser")
-        links = soup.find_all("a", href=True)
-        print(f"  Links: {len(links)}")
-        
-        for a in links:
-            title = a.get_text(strip=True)
-            href = a.get("href", "")
+            page = b.new_page()
+        try:
+            page.goto(url, timeout=15000)
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            print(f"  Timeout, retrying...")
+            try:
+                page.goto(url, timeout=15000)
+                page.wait_for_timeout(2000)
+            except:
+                print(f"  Failed to load: {url}")
+                page.close()
+                continue
             
             if len(title) < 8 or not href or href in ["#",""]: continue
             if href in ["javascript:;","javascript:void(0)"]: continue
