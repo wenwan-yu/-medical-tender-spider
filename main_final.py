@@ -12,14 +12,14 @@ EMAIL_USER = os.environ.get('EMAIL_USER', '1192368708@qq.com')
 EMAIL_PASS = os.environ.get('EMAIL_PASS', 'lyvcpezdrgeriegj')
 
 sites = [
-    ("吉林省人民政府公共资源专栏", "https://www.jl.gov.cn/ggzy/index.html"),
-    ("中国采购与招标网", "https://www.chinabidding.cn/tg/sem/index.html"),
-    ("军队采购网", "https://www.plap.mil.cn/"),
+    ("吉林省人民政府公共资源专栏", "https://www.jl.gov.cn/ggzy/zbcg/zbgg/index.html"),
+    ("中国采购与招标网", "https://www.chinabidding.cn/tg/sem/gg/index.html"),
+    ("军队采购网", "https://www.plap.mil.cn/index/noticeMore.html"),
     ("吉林省政府采购网", "http://www.ccgp-jilin.gov.cn/site/category?parentId=550068&childrenCode=ZcyAnnouncement"),
 ]
 
-KW_MEDICAL = ["医疗"]
-KW_EQUIPMENT = ["设备", "仪器", "器械", "耗材", "试剂"]
+KW_MEDICAL = ["医疗", "医院", "卫生院", "诊所", "医药"]
+KW_EQUIPMENT = ["设备", "仪器", "器械", "耗材", "试剂", "采购"]
 
 def load_sent():
     if os.path.exists(SENT_FILE):
@@ -37,7 +37,7 @@ def get_stype(n):
     return "其他"
 
 def get_itype(t):
-    for k,v in [('招标','招标'),('投标','投标'),('采购','采购'),('中标','中标'),('成交','成交'),('结果','结果')]:
+    for k,v in [('招标','招标'),('投标','投标')]:
         if k in t: return v
     return "公告"
 
@@ -129,7 +129,7 @@ with sync_playwright() as p:
             has_medical = any(k in title for k in KW_MEDICAL)
             has_equipment = any(k in title for k in KW_EQUIPMENT)
             
-            if has_medical or ("医院" in title and has_equipment):
+            if has_medical and has_equipment:
                 items.append({
                     "url": link_url, "title": title,
                     "source_type": get_stype(name),
