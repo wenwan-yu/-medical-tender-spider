@@ -19,11 +19,13 @@ sites = [
 
 KW_MEDICAL = [
     "医疗", "医院", "医药", "卫生", "诊疗", "医用", 
-    "CT", "DR", "B超", "彩超", "核磁", "MRI", "X光",
+    "CT", "DR", "彩超", "超声", "核磁", "MRI", "X光",
     "检验", "试剂", "耗材", "手术", "监护", "呼吸", "麻醉"
 ]
 
-KW_BID = ["招标", "采购", "中标", "成交", "公告", "结果", "公示"]
+KW_BID = ["招标", "采购", "公告", "公示", "采购意向"]
+
+REGIONS = ["长春", "通化", "辽源", "吉林"]
 
 def load_sent():
     if os.path.exists(SENT_FILE):
@@ -69,10 +71,13 @@ with sync_playwright() as p:
                 has_bid = any(k in title for k in KW_BID)
                 
                 has_medical_keyword = "医疗" in title or "医院" in title or "医药" in title
+                has_region = any(r in title for r in REGIONS)
+                is_jilin_site = "ccgp-jilin" in url
                 
                 if has_med and has_bid and has_medical_keyword:
-                    print(f"  → {title[:50]}")
-                    matches.append({"title": title, "url": link})
+                    if is_jilin_site or has_region:
+                        print(f"  → {title[:50]}")
+                        matches.append({"title": title, "url": link})
 
         except Exception as e:
             print(f"  异常：{str(e)[:60]}")
