@@ -2,7 +2,7 @@ name: 医疗招标信息监控爬虫
 
 on:
   schedule:
-    - cron: '0 8,10,12,14,16,18 * * *'
+    - cron: '0 0,2,4,6,8,10 * * *'
 
 jobs:
   crawl:
@@ -32,6 +32,14 @@ jobs:
           name: sent-urls
           path: .
         continue-on-error: true
+
+      - name: Check if previous data exists
+        run: |
+          if [ -f sent_urls.txt ]; then
+            echo "Found previous data: $(wc -l < sent_urls.txt) URLs"
+          else
+            echo "No previous data found"
+          fi
 
       - name: Run spider
         env:
