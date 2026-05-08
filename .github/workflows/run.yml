@@ -1,8 +1,11 @@
 name: 医疗招标信息监控爬虫
 
 on:
+  # 定时触发（保留你原来的）
   schedule:
     - cron: '0 8,10,12,14,16,18 * * *'
+  # 加上手动触发！
+  workflow_dispatch:
 
 jobs:
   crawl:
